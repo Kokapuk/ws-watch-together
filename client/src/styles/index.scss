@@ -65,6 +65,11 @@ button {
   &:hover {
     opacity: 0.85;
   }
+
+  &.button__danger {
+    color: white;
+    background-color: firebrick;
+  }
 }
 
 br {

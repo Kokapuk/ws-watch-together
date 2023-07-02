@@ -3,6 +3,7 @@ import styles from '../styles/CreateRoomForm.module.scss';
 import axios from '../utils/axios';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';
+import createToast from '../utils/createToast';
 
 const CreateRoomForm = () => {
   const [title, setTitle] = useState('');
@@ -16,7 +17,7 @@ const CreateRoomForm = () => {
       await axios.post('/rooms', { title, video: videoUrl });
       navigate(0);
     } catch (err: any) {
-      alert(err.response.data.message ?? err.message);
+      createToast(`Failed to delete room: ${err.response.data.message ?? err.message}`);
     }
   };
 

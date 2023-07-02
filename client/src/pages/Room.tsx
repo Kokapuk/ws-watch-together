@@ -1,28 +1,13 @@
 import classNames from 'classnames';
-import format from 'format-duration';
 import { SyntheticEvent, useEffect, useRef, useState } from 'react';
-import {
-  FaArrowLeft,
-  FaBackward,
-  FaCompress,
-  FaExpand,
-  FaForward,
-  FaPause,
-  FaPlay,
-  FaVolumeHigh,
-  FaVolumeLow,
-  FaVolumeOff,
-  FaVolumeXmark,
-} from 'react-icons/fa6';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import IconButton from '../components/IconButton';
 import LoadingSpinner from '../components/LoadingSpinner';
-import Slider from '../components/Slider';
 import styles from '../styles/RoomPage.module.scss';
 import axios from '../utils/axios';
-import { Room as RoomType } from '../utils/types';
 import createToast from '../utils/createToast';
+import { PlayerState, Room as RoomType } from '../utils/types';
+import Controls from '../components/Controls';
 
 const socket = io(import.meta.env.VITE_SERVER_URL);
 let mouseMoveTimeout = -1;
@@ -32,13 +17,15 @@ const Room = () => {
   const params = useParams();
   const [room, setRoom] = useState<RoomType | null>(null);
   const [cursorActive, setCursorActive] = useState(false);
-  const [isPlaying, setPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.2);
-  const [isMuted, setMuted] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isBuffering, setBuffering] = useState(true);
-  const [isFullscreen, setFullscreen] = useState(false);
+  const [playerState, setPlayerState] = useState<PlayerState>({
+    isPlaying: false,
+    volume: 0.2,
+    isMuted: false,
+    currentTime: 0,
+    duration: 0,
+    isBuffering: false,
+    isFullscreen: false,
+  });
 
   const videoContainer = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -52,18 +39,18 @@ const Room = () => {
         roomId = response.data.id;
       } catch (err: any) {
         console.error(err);
-        alert(err.response.data.message ?? err.message);
+        createToast(err.response.data.message ?? err.message);
       }
     })();
 
     socket.on('play', (time) => {
       changeTime(time);
-      setPlaying(true);
+      setPlayerState((prev) => ({ ...prev, isPlaying: true }));
     });
 
     socket.on('pause', (time) => {
       changeTime(time);
-      setPlaying(false);
+      setPlayerState((prev) => ({ ...prev, isPlaying: false }));
     });
 
     socket.on('seek', (time) => {
@@ -80,15 +67,15 @@ const Room = () => {
 
     document.onfullscreenchange = () => {
       if (!document.fullscreenElement) {
-        setFullscreen(false);
+        setPlayerState((prev) => ({ ...prev, isFullscreen: false }));
       }
     };
 
     navigator.mediaSession.setActionHandler('play', () => {
-      socket.emit('play', room!.id, currentTime);
+      socket.emit('play', room!.id, playerState.currentTime);
     });
     navigator.mediaSession.setActionHandler('pause', () => {
-      socket.emit('pause', room!.id, currentTime);
+      socket.emit('pause', room!.id, playerState.currentTime);
     });
 
     return () => {
@@ -105,38 +92,38 @@ const Room = () => {
       return;
     }
 
-    video.current.muted = isMuted;
-  }, [isMuted]);
+    video.current.muted = playerState.isMuted;
+  }, [playerState.isMuted]);
 
   useEffect(() => {
     if (!video.current) {
       return;
     }
 
-    video.current.volume = volume * volume;
-  }, [volume]);
+    video.current.volume = playerState.volume * playerState.volume;
+  }, [playerState.volume]);
 
   useEffect(() => {
-    if (isPlaying) {
+    if (playerState.isPlaying) {
       video.current?.play();
     } else {
       video.current?.pause();
     }
-  }, [isPlaying]);
+  }, [playerState.isPlaying]);
 
   useEffect(() => {
-    if (isFullscreen) {
+    if (playerState.isFullscreen) {
       videoContainer.current?.requestFullscreen();
     } else {
       if (document.fullscreenElement) {
         document.exitFullscreen();
       }
     }
-  }, [isFullscreen]);
+  }, [playerState.isFullscreen]);
 
   const handleMetadataLoad = (event: SyntheticEvent<HTMLVideoElement>) => {
-    setDuration((event.target as HTMLVideoElement).duration);
-    video.current!.volume = volume * volume;
+    setPlayerState((prev) => ({ ...prev, duration: (event.target as HTMLVideoElement).duration }));
+    video.current!.volume = playerState.volume * playerState.volume;
   };
 
   const handleVideoMouseMove = () => {
@@ -162,22 +149,6 @@ const Room = () => {
     video.current.currentTime = newTime;
   };
 
-  const getVolumeIcon = () => {
-    if (isMuted) {
-      return <FaVolumeXmark />;
-    }
-
-    if (volume === 0) {
-      return <FaVolumeOff />;
-    }
-
-    if (volume <= 0.5) {
-      return <FaVolumeLow />;
-    }
-
-    return <FaVolumeHigh />;
-  };
-
   return (
     <div className={styles.container}>
       {room ? (
@@ -187,76 +158,25 @@ const Room = () => {
           className={classNames(styles['video-container'], !cursorActive && styles['video-container_hidden-cursor'])}>
           <video
             onLoadedMetadata={handleMetadataLoad}
-            onWaiting={() => setBuffering(true)}
-            onCanPlay={() => setBuffering(false)}
-            onClick={() => (isPlaying ? socket.emit('pause', room.id, currentTime) : socket.emit('play', room.id, currentTime))}
-            onTimeUpdate={(e) => setCurrentTime((e.target as HTMLVideoElement).currentTime)}
+            onWaiting={() => setPlayerState((prev) => ({ ...prev, isBuffering: true }))}
+            onCanPlay={() => setPlayerState((prev) => ({ ...prev, isBuffering: false }))}
+            onClick={() =>
+              playerState.isPlaying
+                ? socket.emit('pause', room.id, playerState.currentTime)
+                : socket.emit('play', room.id, playerState.currentTime)
+            }
+            onTimeUpdate={(e) => setPlayerState((prev) => ({ ...prev, currentTime: (e.target as HTMLVideoElement).currentTime }))}
             ref={video}
             className={styles.video}
             src={room.video}
           />
-          <div className={classNames(styles.title, cursorActive && styles.title_visible)}>
-            <Link to='/' className={styles['title__button-leave']}>
-              <IconButton>
-                <FaArrowLeft />
-              </IconButton>
-            </Link>
-            <h2>{room.title}</h2>
-          </div>
-
-          {isBuffering && (
-            <div className={styles['buffering-indicator']}>
-              <LoadingSpinner />
-            </div>
-          )}
-
-          <div
-            className={classNames(
-              styles.controls,
-              cursorActive && styles.controls_visible,
-              isBuffering && cursorActive && styles.controls_disabled
-            )}>
-            <IconButton onClick={() => setMuted((prev) => !prev)}>{getVolumeIcon()}</IconButton>
-            <Slider
-              min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={(e) => setVolume((e.target as HTMLInputElement).valueAsNumber)}
-              className={styles['controls__volume-slider']}
-            />
-
-            <div className={styles.controls__separator} />
-
-            <IconButton onClick={() => socket.emit('seek', room.id, currentTime - 5)}>
-              <FaBackward />
-            </IconButton>
-            <IconButton
-              onClick={() =>
-                isPlaying ? socket.emit('pause', room.id, currentTime) : socket.emit('play', room.id, currentTime)
-              }>
-              {isPlaying ? <FaPause /> : <FaPlay />}
-            </IconButton>
-            <IconButton onClick={() => socket.emit('seek', room.id, currentTime + 5)}>
-              <FaForward />
-            </IconButton>
-
-            <div className={styles.controls__separator} />
-
-            <p className={styles.controls__time}>{format(currentTime * 1000)}</p>
-            <Slider
-              fullWidth
-              value={currentTime}
-              onChange={(e) => socket.emit('seek', room.id, (e.target as HTMLInputElement).valueAsNumber)}
-              min={0}
-              max={duration}
-            />
-            <p className={styles.controls__time}>{format(duration * 1000)}</p>
-
-            <div className={styles.controls__separator} />
-
-            <IconButton onClick={() => setFullscreen((prev) => !prev)}>{isFullscreen ? <FaCompress /> : <FaExpand />}</IconButton>
-          </div>
+          <Controls
+            playerState={playerState}
+            setPlayerState={setPlayerState}
+            cursorActive={cursorActive}
+            room={room}
+            socket={socket}
+          />
         </div>
       ) : (
         <LoadingSpinner />

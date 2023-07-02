@@ -3,6 +3,7 @@ import styles from '../styles/RoomList.module.scss';
 import { useEffect, useState } from 'react';
 import { Room as RoomType } from '../utils/types';
 import axios from '../utils/axios';
+import createToast from '../utils/createToast';
 
 const RoomList = () => {
   const [rooms, setRooms] = useState<RoomType[]>([]);
@@ -14,7 +15,7 @@ const RoomList = () => {
         setRooms(response.data);
       } catch (err: any) {
         console.error(err);
-        alert(err.response.data.message ?? err.message);
+        createToast(err.response.data.message ?? err.message);
       }
     })();
   }, []);

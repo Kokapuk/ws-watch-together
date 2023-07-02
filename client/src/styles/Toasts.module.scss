@@ -23,4 +23,25 @@
   background-color: rgba(100, 148, 237, 0.5);
   backdrop-filter: blur(5px);
   border-radius: $border-radius;
+  transition: $transition-duration all ease-out;
+
+  &_enter {
+    opacity: 0;
+    scale: 0.9;
+
+    &-active {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  &_exit {
+    opacity: 1;
+    scale: 1;
+
+    &-active {
+      opacity: 0;
+      scale: 0.9;
+    }
+  }
 }

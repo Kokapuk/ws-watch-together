@@ -2,12 +2,22 @@
   display: inline-flex;
   flex-direction: column;
   padding: 15px;
-  gap: 5px;
-  width: fit-content;
+  gap: 10px;
+
+  &__buttons {
+    display: flex;
+    gap: 10px;
+  }
+}
+
+@media screen and (width <= 767px) {
+  .room {
+    width: 100%;
+  }
 }
 
 @media screen and (width > 767px) {
   .room {
-    max-width: 300px;
+    width: 250px;
   }
 }

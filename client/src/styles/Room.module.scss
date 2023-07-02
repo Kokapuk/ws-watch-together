@@ -1,0 +1,13 @@
+.room {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 15px;
+  gap: 5px;
+  width: fit-content;
+}
+
+@media screen and (width > 767px) {
+  .room {
+    max-width: 300px;
+  }
+}

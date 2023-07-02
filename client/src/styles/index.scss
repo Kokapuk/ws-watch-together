@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+@import './vars.scss';
+
+* {
+  padding: 0;
+  margin: 0;
+  outline: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+html {
+  font-size: 62.5%;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100vh;
+}
+
+h1 {
+  font-size: 3.2rem;
+}
+
+h2 {
+  font-size: 2.4rem;
+}
+
+h3 {
+  font-size: 1.8rem;
+}
+
+h4,
+p {
+  font-size: 1.6rem;
+}
+
+input[type='text'],
+input[type='url'] {
+  padding: 5px 10px;
+  font-size: 1.4rem;
+  border-radius: $border-radius;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: $transition;
+
+  &:hover,
+  &:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+button {
+  padding: 5px 10px;
+  font-size: 1.6rem;
+  border-radius: $border-radius;
+  background-color: white;
+  color: black;
+  border: 0;
+  cursor: pointer;
+  transition: $transition;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+br {
+  content: '';
+  display: block;
+  height: 25px;
+}
+
+.paper {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: $border-radius-large;
+}
+
+::selection {
+  background-color: rgba(0, 191, 255, 0.5);
+}
+
+@media screen and (width > 767px) {
+  #root {
+    padding: 50px 150px;
+  }
+}
+
+@media screen and (width <= 767px) {
+  #root {
+    padding: 25px;
+  }
+}

@@ -1,0 +1,17 @@
+.icon-button {
+  height: 22px;
+  width: 22px;
+  background-color: transparent;
+  color: white;
+  padding: 0;
+  font-size: 22px;
+  line-height: 22px;
+
+  &:hover {
+    scale: 1.15;
+  }
+
+  &:active {
+    scale: 1;
+  }
+}
